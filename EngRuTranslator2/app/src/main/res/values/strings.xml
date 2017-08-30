@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Eng⇔Ru Translator</string>
+    <string name="action_save">Сохранить словарь</string>
+    <string name="action_restore">Сбросить словарь</string>
+</resources>

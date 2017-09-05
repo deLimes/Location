@@ -1,0 +1,26 @@
+<resources>
+    <!--
+    TODO: Before you run your application, you need a Google Maps API key.
+
+    To get one, follow this link, follow the directions and press "Create" at the end:
+
+    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=55:19:10:E5:3E:BF:C4:2E:BE:2C:10:5E:4A:F2:73:3A:E6:00:C9:BC%3Bcom.example.delimes.geolocation
+
+    You can also add your credentials to an existing key, using these values:
+
+    Package name:
+    55:19:10:E5:3E:BF:C4:2E:BE:2C:10:5E:4A:F2:73:3A:E6:00:C9:BC
+
+    SHA-1 certificate fingerprint:
+    55:19:10:E5:3E:BF:C4:2E:BE:2C:10:5E:4A:F2:73:3A:E6:00:C9:BC
+
+    Alternatively, follow the directions here:
+    https://developers.google.com/maps/documentation/android/start#get-key
+
+    Once you have your key (it starts with "AIza"), replace the "google_maps_key"
+    string in this file.
+    -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
+        AIzaSyCdGM1uTonxgKdfLXSoft7v_XQaBLv8PsE
+    </string>
+</resources>

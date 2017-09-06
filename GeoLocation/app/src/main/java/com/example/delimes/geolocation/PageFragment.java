@@ -11,6 +11,7 @@ import android.support.v4.app.ActivityCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 
@@ -82,6 +83,15 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         tvLocationNet = (TextView) page.findViewById(R.id.tvLocationNet);
 
         locationManager = (LocationManager) getActivity().getSystemService(LOCATION_SERVICE);
+
+        View btnLocationSettings = page.findViewById(R.id.btnLocationSettings);
+        btnLocationSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(
+                        android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            }
+        });
 
         init();
 
@@ -167,8 +177,10 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             if(markerGPS != null){
                 markerGPS.remove();
             }
-            markerGPS = mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).icon(
-                    BitmapDescriptorFactory.defaultMarker()));
+
+            markerGPS = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(location.getLatitude(), location.getLongitude())).icon(BitmapDescriptorFactory.defaultMarker())
+                    .title("GPS"));
 
         } else if (location.getProvider().equals(
                 LocationManager.NETWORK_PROVIDER)) {
@@ -177,9 +189,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             if(markerNet != null){
                 markerNet.remove();
             }
-            markerNet = mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).icon(
-                    BitmapDescriptorFactory
-                            .defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+            markerNet = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(location.getLatitude(), location.getLongitude())).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                    .title("Net"));
 
         }
 
@@ -210,7 +222,5 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         startActivity(new Intent(
                 android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
     };
-
-
 
 }

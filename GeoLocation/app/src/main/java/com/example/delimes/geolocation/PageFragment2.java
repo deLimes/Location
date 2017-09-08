@@ -9,7 +9,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.List;
@@ -18,6 +20,8 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
 
     private GoogleMap mMap;
     public SupportMapFragment mapFragment;
+
+    public LatLngBounds bounds;
 
     public static PageFragment2 newInstance(int page) {
         PageFragment2 fragment = new PageFragment2();
@@ -78,6 +82,21 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+
+                if(bounds.contains(latLng))
+                {
+                    mMap.addMarker(new MarkerOptions()
+                            .position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                            .title("test"));
+                }
+
+
+            }
+        });
     }
 
 }

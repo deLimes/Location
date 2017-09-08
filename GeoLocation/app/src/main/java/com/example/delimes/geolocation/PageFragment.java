@@ -10,6 +10,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.LayoutRes;
 import android.support.v4.app.ActivityCompat;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -32,6 +33,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
+import com.google.android.gms.maps.model.PolygonOptions;
+
 import java.util.Date;
 import java.util.List;
 
@@ -69,7 +73,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
     Address p1 = null;
     LatLng p2 = null;
-    double radius = 1;
+    double radius;
+    Circle circle = null;
+    Polygon polygon = null;
 
     public static PageFragment newInstance(int page) {
         PageFragment fragment = new PageFragment();
@@ -97,6 +103,11 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                              Bundle savedInstanceState) {
         View page=inflater.inflate(R.layout.fragment_page, container, false);
         View page2=inflater.inflate(R.layout.fragment_page2, container, false);
+
+
+
+
+
 
         tvEnabledGPS = (TextView) page.findViewById(R.id.tvEnabledGPS);
         tvStatusGPS = (TextView) page.findViewById(R.id.tvStatusGPS);
@@ -246,7 +257,10 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
             radius = Double.valueOf(editTextRadius.getText().toString());
 
-            mMap.addCircle(new CircleOptions()
+            if(circle != null){
+                circle.remove();
+            }
+            circle = mMap.addCircle(new CircleOptions()
                     .center(new LatLng(location.getLatitude(), location.getLongitude()))
                     .radius(radius)
                     .strokeColor(Color.RED));
@@ -254,12 +268,19 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
             LatLngBounds bounds = toBounds(new LatLng(location.getLatitude(), location.getLongitude()), radius);
 
+            List<android.support.v4.app.Fragment> fragments = getActivity().getSupportFragmentManager().getFragments();
+            android.support.v4.app.Fragment frag1 = fragments.get(0);
+            android.support.v4.app.Fragment frag2 = fragments.get(1);
+            ((PageFragment2)frag2).bounds = bounds;
+
+
             p2 = getLocationFromAddress(p1.getAddressLine(0));
             if(bounds.contains(p2))
             {
                 mMap.addMarker(new MarkerOptions()
                         .position(p2).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-                        .title("Address"));
+                        .title("Address")
+                        .draggable(true ));
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
                         p2, DEFAULT_ZOOM));
             }
@@ -357,7 +378,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
     };
 
     public LatLng computeOffset(LatLng from, double distance, double heading) {
-        distance /= 6371;//EARTH_RADIUS;
+        distance /= 6371000;//EARTH_RADIUS;
         heading = toRadians(heading);
         // http://williams.best.vwh.net/avform.htm#LL
         double fromLat = toRadians(from.latitude);
@@ -380,6 +401,24 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                 computeOffset(center, distanceFromCenterToCorner, 225.0);
         LatLng northeastCorner =
                 computeOffset(center, distanceFromCenterToCorner, 45.0);
+
+        LatLng northwestCorner =
+                computeOffset(center, distanceFromCenterToCorner, 315.0);
+        LatLng southeastCorner =
+                computeOffset(center, distanceFromCenterToCorner, 135.0);
+
+
+        PolygonOptions polygoneOptions = new PolygonOptions()
+                .add(southwestCorner).add(southeastCorner)
+                .add(northeastCorner).add(northwestCorner)
+                .strokeColor(Color.CYAN).strokeWidth(10);
+
+        if(polygon != null){
+            polygon.remove();
+        }
+        polygon = mMap.addPolygon(polygoneOptions);
+
+
         return new LatLngBounds(southwestCorner, northeastCorner);
     }
 

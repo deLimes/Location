@@ -1,8 +1,15 @@
 package com.example.delimes.geolocation;
 
 import android.Manifest;
+import android.content.ClipData;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.DataSetObserver;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -11,13 +18,19 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.GridView;
+import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,8 +49,14 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 import static android.content.Context.LOCATION_SERVICE;
 import static java.lang.Math.asin;
@@ -70,9 +89,17 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
     //GoogleMap map;
     public GoogleMap mMap;
     private static final int DEFAULT_ZOOM = 17;
+    DBHelper dbHelper;
+    ArrayList<String> items = new ArrayList<>();
+    DataAdapter adapter;
+    //ArrayList<Marker> markersList = new ArrayList<>();;
+    Map<String, Marker> courseMarkers = new HashMap<String, Marker>();
 
+    final String LOG_TAG = "myLogs";
     Address p1 = null;
     LatLng p2 = null;
+    LatLng currentPosition;
+    public LatLngBounds bounds;
     double radius;
     Circle circle = null;
     Polygon polygon = null;
@@ -105,10 +132,6 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         View page2=inflater.inflate(R.layout.fragment_page2, container, false);
 
 
-
-
-
-
         tvEnabledGPS = (TextView) page.findViewById(R.id.tvEnabledGPS);
         tvStatusGPS = (TextView) page.findViewById(R.id.tvStatusGPS);
         tvLocationGPS = (TextView) page.findViewById(R.id.tvLocationGPS);
@@ -118,6 +141,10 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         tvTextView = (TextView) page.findViewById(R.id.textView);
         editTextRadius = (EditText) page.findViewById(R.id.editTextRadius);
+        radius = Double.valueOf(editTextRadius.getText().toString());
+
+        GridView gridView = (GridView) page.findViewById(R.id.gridView);
+
 
         locationManager = (LocationManager) getActivity().getSystemService(LOCATION_SERVICE);
 
@@ -130,13 +157,89 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             }
         });
 
+        // Привяжем массив через адаптер к GridView
+        adapter = new DataAdapter(getContext(), items);
+        gridView.setAdapter(adapter);
+        gridView.setNumColumns(4);
+
+        gridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View itemClicked, int position, long id) {
+
+                TextView itemTextView = (TextView) itemClicked.findViewById(R.id.text_view);
+
+                if(itemTextView.getText().toString().contains("ID = ")){
+
+                    ///////////////////////////////////////////
+                    // подключаемся к БД
+                    SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+                    int delCount = db.delete("mytable", itemTextView.getText().toString(), null);
+//                    markersList.get(position).remove();
+//                    markersList.remove(position);
+
+                    items.remove(position); //"id"
+                    items.remove(position); //"address"
+                    items.remove(position); //"latitude"
+                    items.remove(position); //"longitude"
+
+                    adapter.notifyDataSetChanged();
+
+                    String ID = itemTextView.getText().toString().replace("ID = ", "");
+                    if (courseMarkers.containsKey(ID)) {
+
+                        //1. Remove the Marker from the GoogleMap
+                        courseMarkers.get(ID).remove();
+
+                        //2. Remove the reference to the Marker from the HashMap
+                        courseMarkers.remove(ID);
+
+                    }
+                }
+                return false;
+            }
+        });
+
+        // создаем объект для создания и управления версиями БД
+        dbHelper = new DBHelper(getContext());
+
+        ///////////////////////////////////////////
+        // подключаемся к БД
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        // делаем запрос всех данных из таблицы mytable, получаем Cursor
+        Cursor c = db.query("mytable", null, null, null, null, null, null);
+
+        // ставим позицию курсора на первую строку выборки
+        // если в выборке нет строк, вернется false
+        if (c.moveToFirst()) {
+
+            // определяем номера столбцов по имени в выборке
+            int idColIndex = c.getColumnIndex("id");
+            int addressColIndex = c.getColumnIndex("address");
+            int latitudeColIndex = c.getColumnIndex("latitude");
+            int longitudeColIndex = c.getColumnIndex("longitude");
+
+            do {
+                // получаем значения по номерам столбцов
+                items.add("ID = " + c.getInt(idColIndex));
+                items.add("address = " + c.getString(addressColIndex));
+                items.add("latitude = " + c.getString(latitudeColIndex));
+                items.add("longitude = " + c.getString(longitudeColIndex));
+
+                // переход на следующую строку
+                // а если следующей нет (текущая - последняя), то false - выходим из цикла
+            } while (c.moveToNext());
+        }
+        adapter.notifyDataSetChanged();
+        ///////////////////////////////////////////
+
         init();
 
         return page;
     }
 
     private void init() {
-
     }
 
     @Override
@@ -228,7 +331,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             }
             markerNet = mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(location.getLatitude(), location.getLongitude())).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                    .title("Net"));
+                    .title("Net")
+                    .draggable(true));
 
         }
 
@@ -248,30 +352,21 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
             Toast toast = Toast.makeText(getContext(),
                     p1.toString(),
-                    Toast.LENGTH_SHORT);
+                    Toast.LENGTH_LONG);
             toast.setGravity(Gravity.TOP, 0, 0);
             toast.show();
             tvTextView.setText(p1.getAddressLine(0));
 
 
+            currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
 
-            radius = Double.valueOf(editTextRadius.getText().toString());
+            bounds = toBounds(currentPosition, radius);
+            addItemsToMap();
 
-            if(circle != null){
-                circle.remove();
-            }
-            circle = mMap.addCircle(new CircleOptions()
-                    .center(new LatLng(location.getLatitude(), location.getLongitude()))
-                    .radius(radius)
-                    .strokeColor(Color.RED));
-                    //.fillColor(Color.BLUE));
-
-            LatLngBounds bounds = toBounds(new LatLng(location.getLatitude(), location.getLongitude()), radius);
-
-            List<android.support.v4.app.Fragment> fragments = getActivity().getSupportFragmentManager().getFragments();
-            android.support.v4.app.Fragment frag1 = fragments.get(0);
-            android.support.v4.app.Fragment frag2 = fragments.get(1);
-            ((PageFragment2)frag2).bounds = bounds;
+//            List<android.support.v4.app.Fragment> fragments = getActivity().getSupportFragmentManager().getFragments();
+//            android.support.v4.app.Fragment frag1 = fragments.get(0);
+//            android.support.v4.app.Fragment frag2 = fragments.get(1);
+//            ((PageFragment2)frag2).bounds = bounds;
 
 
             p2 = getLocationFromAddress(p1.getAddressLine(0));
@@ -284,6 +379,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
                         p2, DEFAULT_ZOOM));
             }
+
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////
@@ -315,7 +411,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
             Toast toast = Toast.makeText(getActivity().getApplicationContext(),
                     "!coder.isPresent()",
-                    Toast.LENGTH_SHORT);
+                    Toast.LENGTH_LONG);
             toast.setGravity(Gravity.TOP, 0, 0);
             toast.show();
 
@@ -372,6 +468,33 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
     }
 
+    public Address getAddressFromLocation(LatLng latLng)
+    {
+        Geocoder coder= new Geocoder(getContext());
+        if(!coder.isPresent()){
+            return null;
+        }
+        List<Address> address;
+        //Address p1 = null;
+
+        try
+        {
+            address = coder.getFromLocation(latLng.latitude, latLng.longitude, 5);
+            if(address==null)
+            {
+                return null;
+            }
+
+            p1 = address.get(0);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return p1;
+
+    }
+
     public void onClickLocationSettings(View view) {
         startActivity(new Intent(
                 android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
@@ -408,6 +531,18 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                 computeOffset(center, distanceFromCenterToCorner, 135.0);
 
 
+        //write circkle
+        if(circle != null){
+            circle.remove();
+        }
+        circle = mMap.addCircle(new CircleOptions()
+                .center(center)
+                .radius(radius)
+                .strokeColor(Color.RED));
+        //.fillColor(Color.BLUE));
+
+
+        //write polygon
         PolygonOptions polygoneOptions = new PolygonOptions()
                 .add(southwestCorner).add(southeastCorner)
                 .add(northeastCorner).add(northwestCorner)
@@ -420,6 +555,186 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
 
         return new LatLngBounds(southwestCorner, northeastCorner);
+    }
+
+    public void addStock(LatLng latLng) {
+
+        // создаем объект для данных
+        ContentValues cv = new ContentValues();
+
+        // получаем данные из полей ввода
+        String address = getAddressFromLocation(latLng).getAddressLine(0);
+        LatLng latLngShares = getLocationFromAddress(address);
+        //String email = etEmail.getText().toString();
+        String latitude = Double.toString(latLngShares.latitude);
+        String longitude = Double.toString(latLngShares.longitude);
+
+        // подключаемся к БД
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        Log.d(LOG_TAG, "--- Insert in mytable: ---");
+        // подготовим данные для вставки в виде пар: наименование столбца - значение
+
+        cv.put("address", address);
+        cv.put("latitude", latitude);
+        cv.put("longitude", longitude);
+
+        // вставляем запись и получаем ее ID
+        long rowID = db.insert("mytable", null, cv);
+        Log.d(LOG_TAG, "row inserted, ID = " + rowID);
+
+        items.add("ID = " + rowID);
+        items.add("address = " + address);
+        items.add("latitude = " + latitude);
+        items.add("longitude = " + longitude);
+
+        adapter.notifyDataSetChanged();
+
+        LatLng latLngShares2 = new LatLng(Double.valueOf(latitude), Double.valueOf(longitude));
+            //markersList.add(
+            if (!courseMarkers.containsKey(Long.toString(rowID))) {
+                courseMarkers.put(Long.toString(rowID), mMap.addMarker(new MarkerOptions()
+                        .position(latLngShares2).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                        .title(Long.toString(rowID))
+                        .snippet(address)));
+            }
+            //);
+
+    }
+
+    public void addItemsToMap()
+    {
+        if(this.mMap != null)
+        {
+            //bounds This is the current user-viewable region of the map
+
+            //Loop through all the items that are available to be placed on the map
+            ///////////////////////////////////////////
+            // подключаемся к БД
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+            // делаем запрос всех данных из таблицы mytable, получаем Cursor
+            Cursor c = db.query("mytable", null, null, null, null, null, null);
+
+            // ставим позицию курсора на первую строку выборки
+            // если в выборке нет строк, вернется false
+            if (c.moveToFirst()) {
+
+                // определяем номера столбцов по имени в выборке
+                int idColIndex = c.getColumnIndex("id");
+                int addressColIndex = c.getColumnIndex("address");
+                int latitudeColIndex = c.getColumnIndex("latitude");
+                int longitudeColIndex = c.getColumnIndex("longitude");
+
+                do {
+                    // получаем значения по номерам столбцов
+                    int ID = c.getInt(idColIndex);
+                    String address = c.getString(addressColIndex);
+                    double latitude = Double.valueOf(c.getString(latitudeColIndex));
+                    double longitude = Double.valueOf(c.getString(longitudeColIndex));
+
+                    LatLng latLngShares = new LatLng(latitude, longitude);
+                    if (bounds.contains(latLngShares)) {
+                        //markersList.add(
+
+                        if (!courseMarkers.containsKey(Integer.toString(ID))) {
+                            courseMarkers.put(Integer.toString(ID), mMap.addMarker(new MarkerOptions()
+                                    .position(latLngShares).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                                    .title(Integer.toString(ID))
+                                    .snippet(address)));
+                        }
+                        //);
+                    } else {
+                        if (courseMarkers.containsKey(Integer.toString(ID))) {
+
+                            //1. Remove the Marker from the GoogleMap
+                            courseMarkers.get(Integer.toString(ID)).remove();
+
+                            //2. Remove the reference to the Marker from the HashMap
+                            courseMarkers.remove(Integer.toString(ID));
+
+                        }
+                    }
+
+                    // переход на следующую строку
+                    // а если следующей нет (текущая - последняя), то false - выходим из цикла
+                } while (c.moveToNext());
+            }
+        }
+    }
+
+
+    class DBHelper extends SQLiteOpenHelper {
+
+        public static final int DATABASE_VERSION = 1;
+        public static final String DATABASE_NAME = "myDB";
+
+        public DBHelper(Context context) {
+            // конструктор суперкласса
+            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        }
+
+
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+
+            Log.d(LOG_TAG, "--- onCreate database ---");
+            // создаем таблицу с полями
+            db.execSQL("create table mytable ("
+                    + "id integer primary key autoincrement,"
+                    + "address text,"
+                    + "latitude text,"
+                    + "longitude text" + ");");
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
+
+        }
+
+    }
+
+    public class DataAdapter extends ArrayAdapter<String> {
+
+        private final Context mContext;
+        private ArrayList<String> values;
+
+        // Конструктор
+        public DataAdapter(Context context, ArrayList<String> values) {
+            super(context, R.layout.list_item, values);
+            // TODO Auto-generated constructor stub
+            this.values = values;
+            this.mContext = context;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // TODO Auto-generated method stub
+
+            final LayoutInflater inflater = (LayoutInflater) mContext
+                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+            View rowView = inflater.inflate(R.layout.list_item, parent, false);
+
+            TextView text_view = (TextView) rowView.findViewById(R.id.text_view);
+            text_view.setText(values.get(position));
+//            TextView label = (TextView) convertView;
+//
+//            if (convertView == null) {
+//                convertView = new TextView(mContext);
+//                label = (TextView) convertView;
+//            }
+//            label.setText(values.get(position));
+//            return (convertView);
+            return (rowView);
+        }
+
+        // возвращает содержимое выделенного элемента списка
+        public String getItem(int position) {
+            return values.get(position);
+        }
+
     }
 
 }

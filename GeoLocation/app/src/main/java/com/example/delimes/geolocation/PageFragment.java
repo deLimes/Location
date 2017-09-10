@@ -20,8 +20,11 @@ import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -68,41 +71,45 @@ import static java.lang.Math.toRadians;
 
 public class PageFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback {
 
-    TextView tvEnabledGPS;
-    TextView tvStatusGPS;
-    TextView tvLocationGPS;
-    TextView tvEnabledNet;
-    TextView tvStatusNet;
-    TextView tvLocationNet;
+    private View page;
+    private View page2;
 
-    TextView tvTextView;
-    EditText editTextRadius;
+    private TextView tvEnabledGPS;
+    private TextView tvStatusGPS;
+    private TextView tvLocationGPS;
+    private TextView tvEnabledNet;
+    private TextView tvStatusNet;
+    private TextView tvLocationNet;
+
+    private TextView tvTextView;
+    private EditText editTextRadius;
 
     private LocationManager locationManager;
-    StringBuilder sbGPS = new StringBuilder();
-    StringBuilder sbNet = new StringBuilder();
+    private StringBuilder sbGPS = new StringBuilder();
+    private StringBuilder sbNet = new StringBuilder();
 
-    Marker markerGPS;
-    Marker markerNet;
+    private Marker markerGPS;
+    private Marker markerNet;
 
-    SupportMapFragment mapFragment;
+    private SupportMapFragment mapFragment;
+    private android.support.v4.app.Fragment frag2;
     //GoogleMap map;
     public GoogleMap mMap;
     private static final int DEFAULT_ZOOM = 17;
-    DBHelper dbHelper;
-    ArrayList<String> items = new ArrayList<>();
-    DataAdapter adapter;
+    private DBHelper dbHelper;
+    private ArrayList<String> items = new ArrayList<>();
+    private DataAdapter adapter;
     //ArrayList<Marker> markersList = new ArrayList<>();;
-    Map<String, Marker> courseMarkers = new HashMap<String, Marker>();
+    private Map<String, Marker> courseMarkers = new HashMap<String, Marker>();
 
-    final String LOG_TAG = "myLogs";
-    Address p1 = null;
-    LatLng p2 = null;
-    LatLng currentPosition;
+    private final String LOG_TAG = "myLogs";
+    private Address p1 = null;
+    private LatLng p2 = null;
+    private LatLng currentPosition;
     public LatLngBounds bounds;
-    double radius;
-    Circle circle = null;
-    Polygon polygon = null;
+    private double radius;
+    private Circle circle = null;
+    private Polygon polygon = null;
 
     public static PageFragment newInstance(int page) {
         PageFragment fragment = new PageFragment();
@@ -128,9 +135,12 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View page=inflater.inflate(R.layout.fragment_page, container, false);
-        View page2=inflater.inflate(R.layout.fragment_page2, container, false);
+        page = inflater.inflate(R.layout.fragment_page, container, false);
+        page2 = inflater.inflate(R.layout.fragment_page2, container, false);
 
+        List<android.support.v4.app.Fragment> fragments = getActivity().getSupportFragmentManager().getFragments();
+        //frag1 = fragments.get(0);
+        frag2 = fragments.get(1);
 
         tvEnabledGPS = (TextView) page.findViewById(R.id.tvEnabledGPS);
         tvStatusGPS = (TextView) page.findViewById(R.id.tvStatusGPS);
@@ -141,7 +151,6 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         tvTextView = (TextView) page.findViewById(R.id.textView);
         editTextRadius = (EditText) page.findViewById(R.id.editTextRadius);
-        radius = Double.valueOf(editTextRadius.getText().toString());
 
         GridView gridView = (GridView) page.findViewById(R.id.gridView);
 
@@ -161,6 +170,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         adapter = new DataAdapter(getContext(), items);
         gridView.setAdapter(adapter);
         gridView.setNumColumns(4);
+        gridView.setVerticalSpacing(35);//android:verticalSpacing="35dp"
+
 
         gridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
@@ -197,6 +208,28 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     }
                 }
                 return false;
+            }
+        });
+
+        editTextRadius.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                //editTextRadius.setText(charSequence);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                try {
+                    radius = Double.valueOf(editTextRadius.getText().toString());
+                    ((PageFragment2)frag2).radius = radius;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -240,6 +273,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
     }
 
     private void init() {
+
+        GridView gridView = (GridView) page.findViewById(R.id.gridView);
+        gridView.requestFocus();
     }
 
     @Override
@@ -359,6 +395,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
 
             currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
+            radius = Double.valueOf(editTextRadius.getText().toString());
 
             bounds = toBounds(currentPosition, radius);
             addItemsToMap();
@@ -370,7 +407,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
 
             p2 = getLocationFromAddress(p1.getAddressLine(0));
-            if(bounds.contains(p2))
+
+            if(p2!= null && bounds.contains(p2))
             {
                 mMap.addMarker(new MarkerOptions()
                         .position(p2).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))

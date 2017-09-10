@@ -23,10 +23,12 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
     private GoogleMap mMap;
     public SupportMapFragment mapFragment;
 
-    View page;
-    View page2;
+    private View page;
+    private View page2;
 
-    android.support.v4.app.Fragment frag1;
+    private android.support.v4.app.Fragment frag1;
+
+    public double radius;
 
     public static PageFragment2 newInstance(int page) {
         PageFragment2 fragment = new PageFragment2();
@@ -49,8 +51,8 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        page=inflater.inflate(R.layout.fragment_page, container, false);
-        page2=inflater.inflate(R.layout.fragment_page2, container, false);
+        page = inflater.inflate(R.layout.fragment_page, container, false);
+        page2 = inflater.inflate(R.layout.fragment_page2, container, false);
 
         mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -118,7 +120,7 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
             @Override
             public void onMarkerDragEnd(Marker marker) {
 
-                double radius = Double.valueOf(((EditText) page.findViewById(R.id.editTextRadius)).getText().toString());
+                //double radius = Double.valueOf(((EditText) page.findViewById(R.id.editTextRadius)).getText().toString());
                 ((PageFragment)frag1).bounds = ((PageFragment)frag1).toBounds(marker.getPosition(), radius);
                 ((PageFragment)frag1).addItemsToMap();
 

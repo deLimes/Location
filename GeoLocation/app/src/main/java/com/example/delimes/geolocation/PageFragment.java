@@ -361,6 +361,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     .position(new LatLng(location.getLatitude(), location.getLongitude())).icon(BitmapDescriptorFactory.defaultMarker())
                     .title("GPS")
                     .draggable(true));
+            markerGPS.setTag("Ваше местоположение по данным GPS");
 
 
         } else if (location.getProvider().equals(
@@ -374,6 +375,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     .position(new LatLng(location.getLatitude(), location.getLongitude())).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
                     .title("Net")
                     .draggable(true));
+            markerNet.setTag("Ваше местоположение по данным сети");
 
         }
 
@@ -414,17 +416,17 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 //            ((PageFragment2)frag2).bounds = bounds;
 
 
-            p2 = getLocationFromAddress(p1.getAddressLine(0));
-
-            if(p2!= null && bounds.contains(p2))
-            {
-                mMap.addMarker(new MarkerOptions()
-                        .position(p2).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-                        .title("Address")
-                        .draggable(true ));
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                        p2, DEFAULT_ZOOM));
-            }
+//            p2 = getLocationFromAddress(p1.getAddressLine(0));
+//
+//            if(p2!= null && bounds.contains(p2))
+//            {
+//                mMap.addMarker(new MarkerOptions()
+//                        .position(p2).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+//                        .title("Address")
+//                        .draggable(true ));
+//                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+//                        p2, DEFAULT_ZOOM));
+//            }
 
         }
 
@@ -610,43 +612,51 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         // получаем данные из полей ввода
         Address adr = getAddressFromLocation(latLng);
-        if (adr!=null) {
-            String address = adr.getAddressLine(0);
-            LatLng latLngShares = getLocationFromAddress(address);
-            String latitude = Double.toString(latLngShares.latitude);
-            String longitude = Double.toString(latLngShares.longitude);
-
-            // подключаемся к БД
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-            Log.d(LOG_TAG, "--- Insert in mytable: ---");
-            // подготовим данные для вставки в виде пар: наименование столбца - значение
-
-            cv.put("address", address);
-            cv.put("latitude", latitude);
-            cv.put("longitude", longitude);
-
-            // вставляем запись и получаем ее ID
-            long rowID = db.insert("mytable", null, cv);
-            Log.d(LOG_TAG, "row inserted, ID = " + rowID);
-
-            items.add("ID = " + rowID);
-            items.add("address = " + address);
-            items.add("latitude = " + latitude);
-            items.add("longitude = " + longitude);
-
-            adapter.notifyDataSetChanged();
-
-            LatLng latLngShares2 = new LatLng(Double.valueOf(latitude), Double.valueOf(longitude));
-            //markersList.add(
-            if (!courseMarkers.containsKey(Long.toString(rowID))) {
-                courseMarkers.put(Long.toString(rowID), mMap.addMarker(new MarkerOptions()
-                        .position(latLngShares2).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
-                        .title(Long.toString(rowID))
-                        .snippet(address)));
-            }
-            //);
+        if (adr == null) {
+            return;
         }
+        String address = adr.getAddressLine(0);
+        LatLng latLngShares = getLocationFromAddress(address);
+        if (latLngShares == null) {
+            return;
+        }
+        String latitude = Double.toString(latLngShares.latitude);
+        String longitude = Double.toString(latLngShares.longitude);
+
+        // подключаемся к БД
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        Log.d(LOG_TAG, "--- Insert in mytable: ---");
+        // подготовим данные для вставки в виде пар: наименование столбца - значение
+
+        cv.put("address", address);
+        cv.put("latitude", latitude);
+        cv.put("longitude", longitude);
+
+        // вставляем запись и получаем ее ID
+        long rowID = db.insert("mytable", null, cv);
+        Log.d(LOG_TAG, "row inserted, ID = " + rowID);
+
+        items.add("ID = " + rowID);
+        items.add("address = " + address);
+        items.add("latitude = " + latitude);
+        items.add("longitude = " + longitude);
+
+        adapter.notifyDataSetChanged();
+
+        LatLng latLngShares2 = new LatLng(Double.valueOf(latitude), Double.valueOf(longitude));
+        //markersList.add(
+        if (!courseMarkers.containsKey(Long.toString(rowID))) {
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(latLngShares2).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                    .title(Long.toString(rowID))
+                    //.snippet(address));
+                    .snippet("Подробнее..."));
+            //marker.setTag(address + "\r\n" + "Акция проводится в Интернете и распространяется на граждан Украины.");
+            marker.setTag(address + "\r\n" + " Акция проводится в Интернете и распространяется на граждан Украины.Акция проводится в Интернете и распространяется на граждан Украины.Акция проводится в Интернете и распространяется на граждан Украины.Акция проводится в Интернете и распространяется на граждан Украины.");
+            courseMarkers.put(Long.toString(rowID), marker);
+        }
+        //);
 
     }
 
@@ -686,10 +696,13 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                         //markersList.add(
 
                         if (!courseMarkers.containsKey(Integer.toString(ID))) {
-                            courseMarkers.put(Integer.toString(ID), mMap.addMarker(new MarkerOptions()
+                            Marker marker = mMap.addMarker(new MarkerOptions()
                                     .position(latLngShares).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
                                     .title(Integer.toString(ID))
-                                    .snippet(address)));
+                                    .snippet("Подробнее..."));
+                            marker.setTag(address + "\r\n" + "Акция проводится в Интернете и распространяется на граждан Украины.");
+                            courseMarkers.put(Integer.toString(ID), marker);
+
                         }
                         //);
                     } else {

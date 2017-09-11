@@ -1,10 +1,14 @@
 package com.example.delimes.geolocation;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -32,7 +36,7 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
 
     public static PageFragment2 newInstance(int page) {
         PageFragment2 fragment = new PageFragment2();
-        Bundle args=new Bundle();
+        Bundle args = new Bundle();
         args.putInt("num", page);
         fragment.setArguments(args);
         return fragment;
@@ -84,7 +88,7 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
         frag1 = fragments.get(0);
         android.support.v4.app.Fragment frag2 = fragments.get(1);
 
-        ((PageFragment)frag1).mMap = mMap;
+        ((PageFragment) frag1).mMap = mMap;
 
         // Add a marker in Sydney and move the camera
         LatLng sydney = new LatLng(-34, 151);
@@ -102,7 +106,7 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
 //                            .title("test"));
 //                }
 
-                ((PageFragment)frag1).addStock(latLng);
+                ((PageFragment) frag1).addStock(latLng);
             }
         });
 
@@ -121,11 +125,65 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
             public void onMarkerDragEnd(Marker marker) {
 
                 //double radius = Double.valueOf(((EditText) page.findViewById(R.id.editTextRadius)).getText().toString());
-                ((PageFragment)frag1).bounds = ((PageFragment)frag1).toBounds(marker.getPosition(), radius);
-                ((PageFragment)frag1).addItemsToMap();
+                ((PageFragment) frag1).bounds = ((PageFragment) frag1).toBounds(marker.getPosition(), radius);
+                ((PageFragment) frag1).addItemsToMap();
+
+            }
+        });
+
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+
+                marker.setSnippet("Подробнее...");
+                return false;
+            }
+        });
+
+        mMap.setInfoWindowAdapter(new MyInfoWindowAdapter());
+
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+
+//                Toast toast = Toast.makeText(getActivity().getApplicationContext(),
+//                        marker.getTag().toString(),
+//                        Toast.LENGTH_LONG);
+//                toast.setGravity(Gravity.TOP, 0, 0);
+//                toast.show();
+                marker.setSnippet(marker.getTag().toString());
+                marker.showInfoWindow();
 
             }
         });
     }
 
+    class MyInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
+
+        private final View myContentsView;
+
+        MyInfoWindowAdapter() {
+
+            final LayoutInflater inflater = (LayoutInflater) getContext()
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            myContentsView = inflater.inflate(R.layout.custom_info_contents, null);
+        }
+
+        @Override
+        public View getInfoWindow(Marker marker) {
+            return null;
+        }
+
+        @Override
+        public View getInfoContents(Marker marker) {
+
+            TextView tvTitle = ((TextView) myContentsView.findViewById(R.id.title));
+            tvTitle.setText(marker.getTitle());
+            TextView tvSnippet = ((TextView) myContentsView.findViewById(R.id.snippet));
+            tvSnippet.setText(marker.getSnippet());
+
+            return myContentsView;
+        }
+
+    }
 }

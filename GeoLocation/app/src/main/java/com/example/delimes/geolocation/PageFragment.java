@@ -274,6 +274,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
     private void init() {
 
+        radius = Double.valueOf(editTextRadius.getText().toString());
+        ((PageFragment2)frag2).radius = radius;
+
         GridView gridView = (GridView) page.findViewById(R.id.gridView);
         gridView.requestFocus();
     }
@@ -350,13 +353,15 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
             tvLocationGPS.setText(formatLocation(location));
 
-            if(markerGPS != null){
+            if (markerGPS != null) {
                 markerGPS.remove();
             }
 
             markerGPS = mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(location.getLatitude(), location.getLongitude())).icon(BitmapDescriptorFactory.defaultMarker())
-                    .title("GPS"));
+                    .title("GPS")
+                    .draggable(true));
+
 
         } else if (location.getProvider().equals(
                 LocationManager.NETWORK_PROVIDER)) {
@@ -380,8 +385,11 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
        ////////////////////////////////////////////////////////////////////////////////////////////
         //This is the current user-viewable region of the map
         //LatLngBounds bounds = this.mMap.getProjection().getVisibleRegion().latLngBounds;
+        currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
+        radius = Double.valueOf(editTextRadius.getText().toString());
 
-
+        bounds = toBounds(currentPosition, radius);
+        addItemsToMap();
 
         p1 = getAddressFromLocation(location);
         if (p1!=null) {
@@ -394,11 +402,11 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             tvTextView.setText(p1.getAddressLine(0));
 
 
-            currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
-            radius = Double.valueOf(editTextRadius.getText().toString());
+//            currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
+//            radius = Double.valueOf(editTextRadius.getText().toString());
 
-            bounds = toBounds(currentPosition, radius);
-            addItemsToMap();
+//            bounds = toBounds(currentPosition, radius);
+//            addItemsToMap();
 
 //            List<android.support.v4.app.Fragment> fragments = getActivity().getSupportFragmentManager().getFragments();
 //            android.support.v4.app.Fragment frag1 = fragments.get(0);
@@ -601,34 +609,35 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         ContentValues cv = new ContentValues();
 
         // получаем данные из полей ввода
-        String address = getAddressFromLocation(latLng).getAddressLine(0);
-        LatLng latLngShares = getLocationFromAddress(address);
-        //String email = etEmail.getText().toString();
-        String latitude = Double.toString(latLngShares.latitude);
-        String longitude = Double.toString(latLngShares.longitude);
+        Address adr = getAddressFromLocation(latLng);
+        if (adr!=null) {
+            String address = adr.getAddressLine(0);
+            LatLng latLngShares = getLocationFromAddress(address);
+            String latitude = Double.toString(latLngShares.latitude);
+            String longitude = Double.toString(latLngShares.longitude);
 
-        // подключаемся к БД
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+            // подключаемся к БД
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-        Log.d(LOG_TAG, "--- Insert in mytable: ---");
-        // подготовим данные для вставки в виде пар: наименование столбца - значение
+            Log.d(LOG_TAG, "--- Insert in mytable: ---");
+            // подготовим данные для вставки в виде пар: наименование столбца - значение
 
-        cv.put("address", address);
-        cv.put("latitude", latitude);
-        cv.put("longitude", longitude);
+            cv.put("address", address);
+            cv.put("latitude", latitude);
+            cv.put("longitude", longitude);
 
-        // вставляем запись и получаем ее ID
-        long rowID = db.insert("mytable", null, cv);
-        Log.d(LOG_TAG, "row inserted, ID = " + rowID);
+            // вставляем запись и получаем ее ID
+            long rowID = db.insert("mytable", null, cv);
+            Log.d(LOG_TAG, "row inserted, ID = " + rowID);
 
-        items.add("ID = " + rowID);
-        items.add("address = " + address);
-        items.add("latitude = " + latitude);
-        items.add("longitude = " + longitude);
+            items.add("ID = " + rowID);
+            items.add("address = " + address);
+            items.add("latitude = " + latitude);
+            items.add("longitude = " + longitude);
 
-        adapter.notifyDataSetChanged();
+            adapter.notifyDataSetChanged();
 
-        LatLng latLngShares2 = new LatLng(Double.valueOf(latitude), Double.valueOf(longitude));
+            LatLng latLngShares2 = new LatLng(Double.valueOf(latitude), Double.valueOf(longitude));
             //markersList.add(
             if (!courseMarkers.containsKey(Long.toString(rowID))) {
                 courseMarkers.put(Long.toString(rowID), mMap.addMarker(new MarkerOptions()
@@ -637,6 +646,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                         .snippet(address)));
             }
             //);
+        }
 
     }
 

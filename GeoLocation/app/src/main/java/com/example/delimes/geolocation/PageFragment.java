@@ -17,6 +17,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.http.HttpResponseCache;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
@@ -55,6 +56,8 @@ import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -476,7 +479,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         if (networkTS != 0L && gpsTimeSetting){
             // delay 0ms, repeat in 5000ms
-            mTimer.schedule(mMyTimerTask, 0, 60 * 1000);//обновляется каждую минуту
+            mTimer.schedule(mMyTimerTask, 0, 60 * 1000);//обновляется каждую минуту (update time)
             gpsTimeSetting = false;
 
         }
@@ -773,7 +776,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
                     LatLng latLngShares = new LatLng(latitude, longitude);
                     //if (networkTS != 0L && gpsTimeSetting){
-                    boolean stockIsValid = (networkTS >= stockBegan) && (networkTS <= stockEnd);
+                    boolean stockIsValid = (networkTS > stockBegan) && (networkTS < stockEnd);
                     if (bounds.contains(latLngShares) && stockIsValid) {
                         //markersList.add(
 
@@ -893,12 +896,33 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     "dd:MMMM:yyyy HH:mm:ss a", Locale.getDefault());
             final String strDate = simpleDateFormat.format(calendar.getTime());
  */
+//            if (networkTS != 0L) {
+//                Calendar rightNow = Calendar.getInstance();
+//                rightNow.setTimeInMillis(networkTS);
+//                rightNow.add(Calendar.MINUTE, 1);//update time
+//                networkTS = rightNow.getTimeInMillis();
+//            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy HH:mm:ss");
+            Date resultdate = new Date(networkTS);
+
+            Toast toast = Toast.makeText(getActivity().getApplicationContext(),
+                    "+networkTS+:"+ sdf.format(resultdate),
+                    Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.TOP, 0, 0);
+            toast.show();
 
             getActivity().runOnUiThread(new Runnable() {
 
                 @Override
                 public void run() {
+                    //LocalDateTime plusMinutes(long minutes)
+
+
                     addItemsToMap();
+
+
+
                 }
             });
 

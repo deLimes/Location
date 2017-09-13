@@ -896,21 +896,15 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     "dd:MMMM:yyyy HH:mm:ss a", Locale.getDefault());
             final String strDate = simpleDateFormat.format(calendar.getTime());
  */
-//            if (networkTS != 0L) {
-//                Calendar rightNow = Calendar.getInstance();
-//                rightNow.setTimeInMillis(networkTS);
-//                rightNow.add(Calendar.MINUTE, 1);//update time
-//                networkTS = rightNow.getTimeInMillis();
-//            }
+            if (networkTS != 0L) {
+                Calendar rightNow = Calendar.getInstance();
+                rightNow.setTimeInMillis(networkTS);
+                rightNow.add(Calendar.MINUTE, 1);//update time
+                networkTS = rightNow.getTimeInMillis();
+            }
 
-            SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy HH:mm:ss");
-            Date resultdate = new Date(networkTS);
 
-            Toast toast = Toast.makeText(getActivity().getApplicationContext(),
-                    "+networkTS+:"+ sdf.format(resultdate),
-                    Toast.LENGTH_LONG);
-            toast.setGravity(Gravity.TOP, 0, 0);
-            toast.show();
+
 
             getActivity().runOnUiThread(new Runnable() {
 
@@ -920,6 +914,15 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
 
                     addItemsToMap();
+
+                    SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy HH:mm:ss");
+                    Date resultdate = new Date(networkTS);
+
+                    Toast toast = Toast.makeText(getActivity().getApplicationContext(),
+                            "+networkTS+:"+ sdf.format(resultdate),
+                            Toast.LENGTH_LONG);
+                    toast.setGravity(Gravity.TOP, 0, 0);
+                    toast.show();
 
 
 

@@ -16,9 +16,11 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.http.HttpResponseCache;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.UiThread;
 import android.support.v4.app.ActivityCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -52,14 +54,19 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.content.Context.LOCATION_SERVICE;
 import static java.lang.Math.asin;
@@ -110,6 +117,10 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
     private double radius;
     private Circle circle = null;
     private Polygon polygon = null;
+    private Timer mTimer = new Timer();
+    private MyTimerTask mMyTimerTask = new MyTimerTask();
+    private long networkTS;
+    private boolean gpsTimeSetting = true;
 
     public static PageFragment newInstance(int page) {
         PageFragment fragment = new PageFragment();
@@ -169,7 +180,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         // Привяжем массив через адаптер к GridView
         adapter = new DataAdapter(getContext(), items);
         gridView.setAdapter(adapter);
-        gridView.setNumColumns(4);
+        gridView.setNumColumns(6);
         gridView.setVerticalSpacing(35);//android:verticalSpacing="35dp"
 
 
@@ -193,6 +204,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     items.remove(position); //"address"
                     items.remove(position); //"latitude"
                     items.remove(position); //"longitude"
+                    items.remove(position); //"stockBegan"
+                    items.remove(position); //"stockEnd"
 
                     adapter.notifyDataSetChanged();
 
@@ -252,6 +265,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             int addressColIndex = c.getColumnIndex("address");
             int latitudeColIndex = c.getColumnIndex("latitude");
             int longitudeColIndex = c.getColumnIndex("longitude");
+            int stockBeganColIndex = c.getColumnIndex("stockBegan");
+            int stockEndColIndex = c.getColumnIndex("stockEnd");
 
             do {
                 // получаем значения по номерам столбцов
@@ -259,6 +274,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                 items.add("address = " + c.getString(addressColIndex));
                 items.add("latitude = " + c.getString(latitudeColIndex));
                 items.add("longitude = " + c.getString(longitudeColIndex));
+                items.add("stockBegan = " + c.getString(stockBeganColIndex));
+                items.add("stockEnd = " + c.getString(stockEndColIndex));
+
 
                 // переход на следующую строку
                 // а если следующей нет (текущая - последняя), то false - выходим из цикла
@@ -279,6 +297,11 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         GridView gridView = (GridView) page.findViewById(R.id.gridView);
         gridView.requestFocus();
+
+        //networkTS = Calendar.getInstance().getTimeInMillis();
+
+
+
     }
 
     @Override
@@ -295,12 +318,15 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                 1000 * 10, 10, locationListener);
         locationManager.requestLocationUpdates(
                 LocationManager.NETWORK_PROVIDER, 1000 * 10, 10,
                 locationListener);
         checkEnabled();
+
+
     }
 
     @Override
@@ -379,6 +405,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         }
 
+
+
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
                 new LatLng(location.getLatitude(),
                         location.getLongitude()), DEFAULT_ZOOM));
@@ -430,6 +458,39 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         }
 
+        if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        Location GPSlocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+        if (GPSlocation != null){
+            networkTS = GPSlocation.getTime();
+        }
+
+        if (networkTS != 0L && gpsTimeSetting){
+            // delay 0ms, repeat in 5000ms
+            mTimer.schedule(mMyTimerTask, 0, 60 * 1000);//обновляется каждую минуту
+            gpsTimeSetting = false;
+
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy HH:mm:ss");
+        Date resultdate = new Date(networkTS);
+
+        Toast toast = Toast.makeText(getActivity().getApplicationContext(),
+                "networkTS:"+ sdf.format(resultdate),
+                Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.TOP, 0, 0);
+        toast.show();
+
+
+
         /////////////////////////////////////////////////////////////////////////////////////////
 
     }
@@ -455,6 +516,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
     public LatLng getLocationFromAddress(String strAddress)
     {
         Geocoder coder= new Geocoder(getContext());
+
         if(!coder.isPresent()){
 
             Toast toast = Toast.makeText(getActivity().getApplicationContext(),
@@ -620,8 +682,16 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         if (latLngShares == null) {
             return;
         }
+
+        Calendar rightNow = Calendar.getInstance();
+
+
         String latitude = Double.toString(latLngShares.latitude);
         String longitude = Double.toString(latLngShares.longitude);
+        String stockBegan = Long.toString(rightNow.getTimeInMillis());
+        rightNow.add(Calendar.MINUTE, 5);
+        String stockEnd = Long.toString(rightNow.getTimeInMillis());
+
 
         // подключаемся к БД
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -632,6 +702,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         cv.put("address", address);
         cv.put("latitude", latitude);
         cv.put("longitude", longitude);
+        cv.put("stockBegan", stockBegan);
+        cv.put("stockEnd", stockEnd);
 
         // вставляем запись и получаем ее ID
         long rowID = db.insert("mytable", null, cv);
@@ -641,6 +713,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         items.add("address = " + address);
         items.add("latitude = " + latitude);
         items.add("longitude = " + longitude);
+        items.add("stockBegan = " + stockBegan);
+        items.add("stockEnd = " + stockEnd);
+
 
         adapter.notifyDataSetChanged();
 
@@ -683,6 +758,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                 int addressColIndex = c.getColumnIndex("address");
                 int latitudeColIndex = c.getColumnIndex("latitude");
                 int longitudeColIndex = c.getColumnIndex("longitude");
+                int stockBeganColIndex = c.getColumnIndex("stockBegan");
+                int stockEndColIndex = c.getColumnIndex("stockEnd");
+
 
                 do {
                     // получаем значения по номерам столбцов
@@ -690,9 +768,13 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     String address = c.getString(addressColIndex);
                     double latitude = Double.valueOf(c.getString(latitudeColIndex));
                     double longitude = Double.valueOf(c.getString(longitudeColIndex));
+                    long stockBegan = Long.valueOf(c.getString(stockBeganColIndex));
+                    long stockEnd = Long.valueOf(c.getString(stockEndColIndex));
 
                     LatLng latLngShares = new LatLng(latitude, longitude);
-                    if (bounds.contains(latLngShares)) {
+                    //if (networkTS != 0L && gpsTimeSetting){
+                    boolean stockIsValid = (networkTS >= stockBegan) && (networkTS <= stockEnd);
+                    if (bounds.contains(latLngShares) && stockIsValid) {
                         //markersList.add(
 
                         if (!courseMarkers.containsKey(Integer.toString(ID))) {
@@ -746,7 +828,10 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     + "id integer primary key autoincrement,"
                     + "address text,"
                     + "latitude text,"
-                    + "longitude text" + ");");
+                    + "longitude text,"
+                    + "stockBegan text,"
+                    + "stockEnd text"
+                    + ");");
         }
 
         @Override
@@ -796,6 +881,30 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             return values.get(position);
         }
 
+    }
+
+    class MyTimerTask extends TimerTask {
+
+        @Override
+        public void run() {
+            /*
+            Calendar calendar = Calendar.getInstance();
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
+                    "dd:MMMM:yyyy HH:mm:ss a", Locale.getDefault());
+            final String strDate = simpleDateFormat.format(calendar.getTime());
+ */
+
+            getActivity().runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    addItemsToMap();
+                }
+            });
+
+
+
+        }
     }
 
 }

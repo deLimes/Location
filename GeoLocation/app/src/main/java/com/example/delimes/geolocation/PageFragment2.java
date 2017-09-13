@@ -20,6 +20,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.sql.Time;
 import java.util.List;
 
 public class PageFragment2 extends android.support.v4.app.Fragment implements OnMapReadyCallback {
@@ -156,6 +157,11 @@ public class PageFragment2 extends android.support.v4.app.Fragment implements On
 
             }
         });
+
+        //Time f = new Time();
+
+
+
     }
 
     class MyInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {

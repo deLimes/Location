@@ -776,7 +776,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
                     LatLng latLngShares = new LatLng(latitude, longitude);
                     //if (networkTS != 0L && gpsTimeSetting){
-                    boolean stockIsValid = (networkTS > stockBegan) && (networkTS < stockEnd);
+                    boolean stockIsValid = (networkTS >= stockBegan) && (networkTS <= stockEnd);
                     if (bounds.contains(latLngShares) && stockIsValid) {
                         //markersList.add(
 

@@ -31,6 +31,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -299,6 +300,14 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
 //        GridView gridView = (GridView) page.findViewById(R.id.gridView);
 //        gridView.requestFocus();
+
+        //View current = getActivity().getCurrentFocus();
+        //if (current != null) current.clearFocus();
+
+        //editTextRadius.clearFocus();
+
+        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(getActivity().INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(editTextRadius.getWindowToken(), 0);
 
         //networkTS = Calendar.getInstance().getTimeInMillis();
 

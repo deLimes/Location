@@ -56,8 +56,6 @@ import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -124,6 +122,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
     private MyTimerTask mMyTimerTask = new MyTimerTask();
     private long networkTS;
     private boolean gpsTimeSetting = true;
+    private boolean timeUpdate = false;
 
     public static PageFragment newInstance(int page) {
         PageFragment fragment = new PageFragment();
@@ -298,8 +297,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         radius = Double.valueOf(editTextRadius.getText().toString());
         ((PageFragment2)frag2).radius = radius;
 
-        GridView gridView = (GridView) page.findViewById(R.id.gridView);
-        gridView.requestFocus();
+//        GridView gridView = (GridView) page.findViewById(R.id.gridView);
+//        gridView.requestFocus();
 
         //networkTS = Calendar.getInstance().getTimeInMillis();
 
@@ -321,6 +320,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                 1000 * 10, 10, locationListener);
@@ -385,6 +385,8 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             if (markerGPS != null) {
                 markerGPS.remove();
             }
+
+            timeUpdate = true;
 
             markerGPS = mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(location.getLatitude(), location.getLongitude())).icon(BitmapDescriptorFactory.defaultMarker())
@@ -461,6 +463,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         }
 
+
         if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -471,9 +474,11 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+
         Location GPSlocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
-        if (GPSlocation != null){
+        if (GPSlocation != null && timeUpdate ){
+            timeUpdate = false;
             networkTS = GPSlocation.getTime();
         }
 

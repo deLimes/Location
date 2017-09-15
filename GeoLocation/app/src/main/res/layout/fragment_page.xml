@@ -106,7 +106,8 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:inputType="number"
-            android:text="200" />
+            android:text="200"
+            android:focusable="false"/>
 
         <GridView
             android:id="@+id/gridView"

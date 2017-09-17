@@ -346,6 +346,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     Toast.LENGTH_LONG);
             toast.setGravity(Gravity.TOP, 0, 0);
             toast.show();
+            return;
         }
         checkEnabled();
 
@@ -396,6 +397,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                         Toast.LENGTH_LONG);
                 toast.setGravity(Gravity.TOP, 0, 0);
                 toast.show();
+                return;
             }
         }
 
@@ -546,6 +548,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     Toast.LENGTH_LONG);
             toast.setGravity(Gravity.TOP, 0, 0);
             toast.show();
+            return;
         }
 
 

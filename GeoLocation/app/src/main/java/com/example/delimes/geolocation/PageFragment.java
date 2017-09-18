@@ -89,6 +89,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
     private TextView tvEnabledNet;
     private TextView tvStatusNet;
     private TextView tvLocationNet;
+    private TextView tvTextSpeed;
 
     private TextView tvTextView;
     private EditText editTextRadius;
@@ -165,6 +166,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         tvTextView = (TextView) page.findViewById(R.id.textView);
         editTextRadius = (EditText) page.findViewById(R.id.editTextRadius);
+        tvTextSpeed = (TextView) page.findViewById(R.id.tvTextSpeed);
 
         GridView gridView = (GridView) page.findViewById(R.id.gridView);
 
@@ -346,6 +348,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     Toast.LENGTH_LONG);
             toast.setGravity(Gravity.TOP, 0, 0);
             toast.show();
+
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
             return;
         }
         checkEnabled();
@@ -397,6 +402,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                         Toast.LENGTH_LONG);
                 toast.setGravity(Gravity.TOP, 0, 0);
                 toast.show();
+
+                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
                 return;
             }
         }
@@ -410,6 +418,31 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             }
         }
     };
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
 
     private void showLocation(Location location) {
         if (location == null || mMap == null)
@@ -498,6 +531,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            tvTextSpeed.setText(Float.toString(location.getSpeedAccuracyMetersPerSecond()));
+        }
 
 //        if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 //            // TODO: Consider calling
@@ -548,6 +584,9 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
                     Toast.LENGTH_LONG);
             toast.setGravity(Gravity.TOP, 0, 0);
             toast.show();
+
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
             return;
         }
 

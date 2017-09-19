@@ -352,6 +352,15 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
 
             return;
+        }catch (Exception e)
+        {
+            Toast toast = Toast.makeText(getActivity().getApplicationContext(),
+                    "Exception:"+ e.toString(),
+                    Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.TOP, 0, 0);
+            toast.show();
+
+            //return;
         }
         checkEnabled();
 
@@ -531,9 +540,25 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
 
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            tvTextSpeed.setText(Float.toString(location.getSpeedAccuracyMetersPerSecond()));
+        if (location.hasSpeed()) {
+            tvTextSpeed.setText(Float.toString(location.getSpeed()));
+
+            Toast toast = Toast.makeText(getActivity().getApplicationContext(),
+                    "location.Speed:"+ location.getSpeed(),
+                    Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.TOP, 0, 0);
+            toast.show();
+
+        }else{
+
+            Toast toast = Toast.makeText(getActivity().getApplicationContext(),
+                    "location.hasSpeed:"+ location.hasSpeed(),
+                    Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.TOP, 0, 0);
+            toast.show();
+
         }
+
 
 //        if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 //            // TODO: Consider calling

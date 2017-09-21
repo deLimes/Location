@@ -541,7 +541,7 @@ public class PageFragment extends android.support.v4.app.Fragment implements OnM
         }
 
         if (location.hasSpeed()) {
-            tvTextSpeed.setText(Float.toString(location.getSpeed()));
+            tvTextSpeed.setText(location.getSpeed() * 3600 / 1000 +"km/h");
 
             Toast toast = Toast.makeText(getActivity().getApplicationContext(),
                     "location.Speed:"+ location.getSpeed(),
